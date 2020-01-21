@@ -19,9 +19,9 @@ func main() {
 	out := flag.String("out", fmt.Sprintf("sagns-poi-%s.xml", time.Now().Format(time.RFC3339)), "path to output file")
 	flag.Parse()
 	bbox := poi.BBox{
-		MinLat: -33.6,
+		MinLat: -33.9,
 		MaxLon: 19.229,
-		MaxLat: -33.3,
+		MaxLat: -33.6,
 		MinLon: 19.0,
 	}
 	pois, err := sagns.Read(*sagnsSource)

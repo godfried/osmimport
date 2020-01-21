@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/godfried/osmimport/poi"
@@ -24,16 +25,16 @@ type Result struct {
 }
 
 type Element struct {
-	Type      string
-	ID        uint64
-	Lat       float64
-	Lon       float64
-	Timestamp string
-	Version   uint32
-	Changeset uint64
-	User      string
-	UID       uint64
-	TagMap    map[string]string
+	Type      string            `json:"type"`
+	ID        uint64            `json:"id"`
+	Lat       float64           `json:"lat"`
+	Lon       float64           `json:"lon"`
+	Timestamp string            `json:"timestamp"`
+	Version   uint32            `json:"version"`
+	Changeset uint64            `json:"changeset"`
+	User      string            `json:"user"`
+	UID       uint64            `json:"uid"`
+	TagMap    map[string]string `json:"tags"`
 }
 
 func (e Element) String() string {
@@ -63,7 +64,6 @@ func (e *Element) Longitude() float64 {
 }
 
 func loadNode(query string) (*http.Response, error) {
-	log.Printf("Loading nodes for query: %s", query)
 	var resp *http.Response
 	var err error
 	vals := url.Values{"data": []string{query}}
@@ -111,8 +111,10 @@ func LoadMatchingNode(p OSMPOI, dist float64) (*Element, error) {
 	}
 	match := poi.SelectMatch(nodes, p, dist)
 	if match == nil {
+		log.Printf("No match found for %s", p.Names()[0].Value)
 		return nil, nil
 	}
+	log.Printf("match found %#v", match)
 	return match.(*Element), nil
 }
 
@@ -125,16 +127,50 @@ func HasMatches(p OSMPOI, dist float64) bool {
 	return m != nil
 }
 
-const (
-	nodeQuery = "[out:json];node[\"%s\"~\"%s\"](around:%f,%f,%f);out meta;"
-	//nodeQuery = "[out:json];node[\"%s\"~\"%s\"](around:%f,%f,%f);out meta;"
-	//nodeQuery = "[out:json];node[\"%s\"~\"%s\"](around:%f,%f,%f);out meta;"
-)
+const query = `
+[out:json][timeout:{{.Timeout}}];
+(
+	node["{{.Key}}"="{{.Value}}"](around:{{.Radius}},{{.Latitude}},{{.Longitude}});
+	way["{{.Key}}"="{{.Value}}"](around:{{.Radius}},{{.Latitude}},{{.Longitude}});
+	relation["{{.Key}}"="{{.Value}}"](around:{{.Radius}},{{.Latitude}},{{.Longitude}});
+);
+out meta;
+`
+
+const timeoutSeconds = 20
+
+type queryParam struct {
+	Timeout   int
+	Key       string
+	Value     string
+	Radius    float64
+	Latitude  float64
+	Longitude float64
+}
+
+func buildQuery(p OSMPOI, dist float64) (string, error) {
+	k, v := p.OSMFilter()
+	arg := queryParam{
+		Timeout:   timeoutSeconds,
+		Key:       k,
+		Value:     v,
+		Radius:    dist,
+		Latitude:  p.Latitude(),
+		Longitude: p.Longitude(),
+	}
+	var b strings.Builder
+	err := template.Must(template.New("query").Parse(query)).Execute(&b, arg)
+	return b.String(), err
+}
 
 func loadNodes(p OSMPOI, dist float64) ([]poi.POI, error) {
-	k, v := p.OSMFilter()
-	query := fmt.Sprintf(nodeQuery, k, v, dist, p.Latitude(), p.Longitude())
-	resp, err := loadNode(query)
+	q, err := buildQuery(p, dist)
+	if err != nil {
+		return nil, err
+	}
+	name := p.Names()[0].Value
+	log.Printf("Loading nodes for %s using query: %s", name, q)
+	resp, err := loadNode(q)
 	if err != nil {
 		return nil, err
 	}
@@ -155,5 +191,6 @@ func loadNodes(p OSMPOI, dist float64) ([]poi.POI, error) {
 	for _, e := range result.Elements {
 		pois = append(pois, e)
 	}
+	log.Printf("Got %d matches for %s", len(pois), name)
 	return pois, nil
 }

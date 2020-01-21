@@ -2,6 +2,7 @@ package poi
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"sort"
 	"strings"
@@ -20,7 +21,14 @@ type poiDists struct {
 	distances []float64
 }
 
+var r = strings.NewReplacer(" ", "", "-", "")
+
+func normaliseName(name Name) string {
+	return strings.ToLower(r.Replace(name.Value))
+}
+
 func selectMatch(pois []POI, poi POI) POI {
+	log.Printf("selecting matches from %s", pois)
 	if len(pois) == 0 {
 		return nil
 	}
@@ -29,17 +37,25 @@ func selectMatch(pois []POI, poi POI) POI {
 	}
 	var contains, fuzz POI
 	fuzzRatio := 50.0
+	names := poi.Names()
+	normalisedNames := make([]string, 0, len(names))
+	for _, n := range names {
+		normalised := normaliseName(n)
+		normalisedNames = append(normalisedNames, normalised)
+	}
+outer:
 	for _, p := range pois {
 		for _, name := range p.Names() {
-			for _, poiName := range poi.Names() {
-				if strings.EqualFold(name.Value, poiName.Value) {
+			normalisedName := normaliseName(name)
+			for _, n := range normalisedNames {
+				if strings.EqualFold(normalisedName, n) {
 					return p
 				}
-				if strings.Contains(name.Value, poiName.Value) || strings.Contains(poiName.Value, name.Value) {
+				if strings.Contains(normalisedName, n) || strings.Contains(n, normalisedName) {
 					contains = p
-					break
+					break outer
 				}
-				ratio := LevenshteinRatio(name.Value, poiName.Value)
+				ratio := LevenshteinRatio(normalisedName, n)
 				if ratio < fuzzRatio {
 					fuzzRatio = ratio
 					fuzz = p
@@ -58,6 +74,9 @@ func selectMatch(pois []POI, poi POI) POI {
 
 func SelectMatch(pois []POI, poi POI, radius float64) POI {
 	nearest := nearestPOIs(pois, poi, radius)
+	if len(pois) > 0 && len(nearest) == 0 {
+		log.Printf("nearestPOIs returned 0 from list of %d", len(pois))
+	}
 	return selectMatch(nearest, poi)
 }
 
