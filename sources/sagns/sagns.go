@@ -122,11 +122,10 @@ func (s SAGNSPOI) Names() []poi.Name {
 
 func (s SAGNSPOI) Tags() map[string]string {
 	tags := s.feature.tags()
-	//tags["start_date"] = s.date.Format("2006-01-02")
 	if s.comments != "" {
-		tags["description"] = s.comments
+		tags["description"] = s.meaning
 	}
-	tags["sagnsid"] = strconv.FormatUint(uint64(s.id), 10)
+	tags["sagns_id"] = strconv.FormatUint(uint64(s.id), 10)
 	tags["source"] = "sagns"
 	for _, n := range s.Names() {
 		tags[string(n.Key)] = n.Value
@@ -134,8 +133,8 @@ func (s SAGNSPOI) Tags() map[string]string {
 	return tags
 }
 
-func (s SAGNSPOI) OSMFilter() (key, value string) {
-	return s.feature.filter()
+func (s SAGNSPOI) OSMFilter() []poi.Attribute {
+	return []poi.Attribute{{Key: "sagns_id", Value: strconv.FormatUint(uint64(s.id), 10)}} //s.feature.filter()
 }
 
 func (s SAGNSPOI) String() string {
@@ -144,254 +143,31 @@ func (s SAGNSPOI) String() string {
 
 type feature string
 
-func (f feature) filter() (key, value string) {
-	switch string(f) {
-	case "Agrivillage":
-		return "place", "village"
-	case "Airfield":
-		return "aeroway", "aerodrome"
-	case "Airport":
-		return "aeroway", "aerodrome"
-	case "Area":
-		return "", ""
-	case "Battlefield":
-		return "historic", "battlefield"
-	case "Bay":
-		return "natural", "bay"
-	case "Beach":
-		return "natural", "beach"
-	case "Border Post":
-		return "barrier", "border_control"
-	case "Bow Lake":
-		return "natural", "water"
-	case "Brickworks":
-		return "industrial", "brickyard"
-	case "Bridge":
-		return "bridge", "yes"
-	case "Bush Area":
-		return "natural", "scrub"
-	case "Canal":
-		return "waterway", "canal"
-	case "Cemetery":
-		return "landuse", "cemetery"
-	case "Cliff":
-		return "natural", "cliff"
-	case "Coastal Rock":
-		return "natural", "bare_rock"
-	case "Coastline":
-		return "", ""
-	case "Coastline_Beach":
-		return "natural", "beach"
-	case "College":
-		return "", ""
-	case "Cove":
-		return "natural", "bay"
-	case "Dam":
-		return "natural", "water"
-	case "Dam Wall":
-		return "waterway", "dam"
-	case "Dock":
-		return "waterway", "dock"
-	case "Double Non Perennial":
-		return "waterway", "river"
-	case "Double Perennial":
-		return "waterway", "river"
-	case "Drift":
-		return "", ""
-	case "Dry":
-		return "natural", "desert"
-	case "Dry Area":
-		return "natural", "desert"
-	case "Dry Water Course":
-		return "waterway", "river"
-	case "Forest":
-		return "natural", "wood"
-	case "Furrow":
-		return "waterway", "ditch"
-	case "Game Reserve":
-		return "boundary", "protected_area"
-	case "Gorge":
-		return "natural", "gorge"
-	case "Group of huts":
-		return "place", "hamlet"
-	case "Guard Post":
-		return "barrier", "border_control"
-	case "Harbour":
-		return "harbour", "yes"
-	case "Heritage resource":
-		return "historic", "yes"
-	case "Hill":
-		return "natural", "peak"
-	case "Historical":
-		return "historic", "yes"
-	case "Holy Grave":
-		return "historic", "tomb"
-	case "Hospital":
-		return "amenity", "hospital"
-	case "Hotel":
-		return "tourism", "hotel"
-	case "Industrial":
-		return "landuse", "industrial"
-	case "Interchange":
-		return "highway", "motorway junction"
-	case "Island":
-		return "place", "island"
-	case "Island Real":
-		return "place", "island"
-	case "Junction":
-		return "highway", "motorway junction"
-	case "Kloof":
-		return "natural", "gorge"
-	case "Kop":
-		return "natural", "peak"
-	case "Lagoon":
-		return "natural", "water"
-	case "Lake":
-		return "natural", "water"
-	case "Lake Vlei":
-		return "natural", "water"
-	case "Land Development":
-		return "landuse", "construction"
-	case "Landing Strip":
-		return "aeroway", "aerodrome"
-	case "Lighthouse/Marine_Beacon":
-		return "man_made", "lighthouse"
-	case "Main":
-		return "", ""
-	case "Marsh Vlei":
-		return "natural", "wetland"
-	case "Mission":
-		return "place", "hamlet"
-	case "Mountain":
-		return "natural", "peak"
-	case "Mountain Peak":
-		return "natural", "peak"
-	case "Mountain Range":
-		return "natural", "mountain_range"
-	case "Mouth":
-		return "natural", "water"
-	case "Museum":
-		return "tourism", "museum"
-	case "Nature Reserve":
-		return "boundary", "protected_area"
-	case "Non Perennial":
-		return "waterway", "river"
-	case "Non_Perennial":
-		return "waterway", "river"
-	case "Observatory":
-		return "landuse", "observatory"
-	case "Ocean":
-		return "", ""
-	case "Other":
-		return "", ""
-	case "Pan":
-		return "natural", "desert"
-	case "Pass":
-		return "mountain_pass", "yes"
-	case "Pass Neks":
-		return "mountain_pass", "yes"
-	case "Patrol Post":
-		return "barrier", "border_control"
-	case "Peak":
-		return "natural", "peak"
-	case "Perennial":
-		return "waterway", "river"
-	case "Plain":
-		return "natural", "grassland"
-	case "Plantation":
-		return "landuse", "forest"
-	case "Plateau":
-		return "natural", "plateau"
-	case "Police_Station":
-		return "amenity", "police"
-	case "Post Office":
-		return "amenity", "post_office"
-	case "Power station":
-		return "power", "substation"
-	case "Prison":
-		return "amenity", "prison"
-	case "Protected Area":
-		return "boundary", "protected_area"
-	case "Quarry":
-		return "landuse", "quarry"
-	case "Railway":
-		return "railway", "rail"
-	case "Railway Station":
-		return "railway", "station"
-	case "Railway Tunnel":
-		return "railway", "rail"
-	case "Research Centre":
-		return "amenity", "research_institute"
-	case "Research Institute":
-		return "amenity", "research_institute"
-	case "Residential Town":
-		return "place", "town"
-	case "Residential Township":
-		return "place", "town"
-	case "Ridge":
-		return "natural", "ridge"
-	case "River (not specified)":
-		return "waterway", "river"
-	case "River Bend":
-		return "natural", "water"
-	case "Road":
-		return "highway", "unclassified"
-	case "Rock":
-		return "natural", "bare_rock"
-	case "Rock Outcrop":
-		return "natural", "bare_rock"
-	case "Ruin":
-		return "historic", "ruin"
-	case "Sandy Area":
-		return "natural", "sand"
-	case "Sawmill":
-		return "craft", "sawmill"
-	case "School":
-		return "school", "yes"
-	case "Settlement":
-		return "place", "village"
-	case "Single Non Perennial":
-		return "waterway", "river"
-	case "Single Perennial":
-		return "waterway", "river"
-	case "Siphon":
-		return "waterway", "canal"
-	case "Spa":
-		return "amenity", "public_bath"
-	case "State":
-		return "landuse", "forest"
-	case "Station":
-		return "railway", "station"
-	case "Studam":
-		return "waterway", "weir"
-	case "Tower":
-		return "man_made", "tower"
-	case "Town":
-		return "place", "town"
-	case "Township":
-		return "place", "town"
-	case "Trail Hiking":
-		return "highway", "path"
-	case "Tunnel":
-		return "tunnel", "yes"
-	case "Urban Area":
-		return "place", "suburb"
-	case "Valley":
-		return "natural", "valley"
-	case "Village":
-		return "place", "village"
-	case "Village Settlement":
-		return "place", "village"
-	case "Water":
-		return "natural", "water"
-	case "Weir":
-		return "waterway", "weir"
-	case "Yard":
-		return "", ""
-	default:
-		log.Printf("unknown feature %s", f)
-		return "", ""
+func (f feature) filter() []poi.Attribute {
+	tags := f.tags()
+	filter := make([]poi.Attribute, 0, len(tags)+1)
+	for k, v := range tags {
+		switch k {
+		case "waterway":
+			filter = append(filter,
+				poi.Attribute{Key: "waterway", Value: "river"},
+				poi.Attribute{Key: "waterway", Value: "stream"},
+				poi.Attribute{Key: "waterway", Value: "canal"},
+				poi.Attribute{Key: "waterway", Value: "ditch"},
+			)
+		case "place":
+			filter = append(filter,
+				poi.Attribute{Key: "place", Value: "island"},
+				poi.Attribute{Key: "place", Value: "suburb"},
+				poi.Attribute{Key: "place", Value: "town"},
+				poi.Attribute{Key: "place", Value: "village"},
+				poi.Attribute{Key: "place", Value: "hamlet"},
+			)
+		default:
+			filter = append(filter, poi.Attribute{Key: k, Value: v})
+		}
 	}
+	return filter
 }
 
 func (f feature) tags() map[string]string {
@@ -524,7 +300,7 @@ func (f feature) tags() map[string]string {
 		}
 	case "Gorge":
 		return map[string]string{
-			"natural": "gorge",
+			"natural": "stream",
 		}
 	case "Group of huts":
 		return map[string]string{
@@ -582,7 +358,7 @@ func (f feature) tags() map[string]string {
 		}
 	case "Kloof":
 		return map[string]string{
-			"natural": "gorge",
+			"waterway": "stream",
 		}
 	case "Kop":
 		return map[string]string{
@@ -641,8 +417,7 @@ func (f feature) tags() map[string]string {
 		}
 	case "Mouth":
 		return map[string]string{
-			"natural": "water",
-			"water":   "river",
+			"waterway": "river",
 		}
 	case "Museum":
 		return map[string]string{
@@ -683,7 +458,7 @@ func (f feature) tags() map[string]string {
 		}
 	case "Pass Neks":
 		return map[string]string{
-			"mountain_pass": "yes",
+			"natural": "saddle",
 		}
 	case "Patrol Post":
 		return map[string]string{
@@ -775,8 +550,7 @@ func (f feature) tags() map[string]string {
 		}
 	case "River Bend":
 		return map[string]string{
-			"natural": "water",
-			"water":   "river",
+			"waterway": "river",
 		}
 	case "Road":
 		return map[string]string{

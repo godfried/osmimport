@@ -15,15 +15,13 @@ import (
 )
 
 func main() {
+	bbox := poi.CircleBox{}
 	sagnsSource := flag.String("csv", "", "path to CSV with SAGNS data")
+	flag.Float64Var(&bbox.Lat, "lat", -33.4, "latitude around which to focus")
+	flag.Float64Var(&bbox.Lon, "lon", 20.0, "longitude around which to focus")
+	flag.Float64Var(&bbox.RadiusKM, "radius", 20, "radius around centre to select points from, in km")
 	out := flag.String("out", fmt.Sprintf("sagns-poi-%s.xml", time.Now().Format(time.RFC3339)), "path to output file")
 	flag.Parse()
-	bbox := poi.BBox{
-		MinLat: -33.9,
-		MaxLon: 19.229,
-		MaxLat: -33.6,
-		MinLon: 19.0,
-	}
 	pois, err := sagns.Read(*sagnsSource)
 	if err != nil {
 		fmt.Println(err)
@@ -35,7 +33,7 @@ func main() {
 		if len(boundedPOIs) >= 10 {
 			break
 		}
-		if bbox.Contains(p) && !overpass.HasMatches(p, 1000) {
+		if bbox.Contains(p) && !overpass.HasMatches(p, 2000) {
 			boundedPOIs = append(boundedPOIs, p)
 		}
 	}

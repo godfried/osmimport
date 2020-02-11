@@ -76,6 +76,7 @@ func NewNode(p poi.POI, id int) *Node {
 	for k, v := range poiTags {
 		tags = append(tags, Tag{Key: k, Value: v})
 	}
+	tags = append(tags, Tag{Key: "fixme", Value: "check against map data"})
 	return &Node{Lat: p.Latitude(), Lon: p.Longitude(), Tag: tags, Visible: true, ID: id}
 }
 
@@ -96,4 +97,38 @@ func GenerateXML(pois []poi.POI, outFile string) error {
 		return err
 	}
 	return ioutil.WriteFile(outFile, data, os.ModePerm)
+}
+
+func GenerateUpdateXML(pois []poi.POI, outFile string) error {
+	o := NewOSMUpdate(pois)
+	data, err := xml.MarshalIndent(o, "", "  ")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(outFile, data, os.ModePerm)
+}
+
+type OSMUpdate struct {
+	XMLName   xml.Name `xml:"osm"`
+	Version   string   `xml:"version,attr"`
+	Generator string   `xml:"generator,attr"`
+	POIs      []poi.POI
+	Bounds    *Bounds `xml:"bounds"`
+}
+
+func NewOSMUpdate(pois []poi.POI) *OSMUpdate {
+	b := NewBounds()
+	for _, p := range pois {
+		b.Expand(p)
+	}
+	return &OSMUpdate{
+		Version:   "0.6",
+		Generator: "JOSM",
+		Bounds:    b,
+		POIs:      pois,
+	}
+}
+
+type Modify struct {
+	POIs []poi.POI
 }

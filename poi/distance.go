@@ -34,3 +34,24 @@ func (b BBox) Contains(p POI) bool {
 	}
 	return p.Latitude() <= b.MaxLat && p.Latitude() >= b.MinLat && p.Longitude() <= b.MaxLon && p.Longitude() >= b.MinLon
 }
+
+type CircleBox struct {
+	Lat, Lon float64
+	RadiusKM float64
+}
+
+func (c CircleBox) IsZero() bool {
+	return c.Lat == 0 && c.Lon == 0 && c.RadiusKM == 0
+}
+
+func (c CircleBox) Contains(p POI) bool {
+	if c.IsZero() {
+		return true
+	}
+	d := Distance(c.Lat, c.Lon, p.Latitude(), p.Longitude())
+	return d < c.RadiusKM*1000
+}
+
+type Box interface {
+	Contains(p POI) bool
+}

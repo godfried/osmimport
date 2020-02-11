@@ -27,7 +27,7 @@ func normaliseName(name Name) string {
 	return strings.ToLower(r.Replace(name.Value))
 }
 
-func selectMatch(pois []POI, poi POI) POI {
+func SelectMatch(pois []POI, poi POI) POI {
 	log.Printf("selecting matches from %s", pois)
 	if len(pois) == 0 {
 		return nil
@@ -70,14 +70,6 @@ outer:
 		return nil
 	}
 	return fuzz
-}
-
-func SelectMatch(pois []POI, poi POI, radius float64) POI {
-	nearest := nearestPOIs(pois, poi, radius)
-	if len(pois) > 0 && len(nearest) == 0 {
-		log.Printf("nearestPOIs returned 0 from list of %d", len(pois))
-	}
-	return selectMatch(nearest, poi)
 }
 
 func SelectNearest(pois []POI, poi POI, radius float64) POI {
@@ -134,6 +126,11 @@ func (p PartitionedPOIs) Add(poi POI) {
 	entry[lon] = append(entry[lon], poi)
 }
 
+type Attribute struct {
+	Key   string
+	Value string
+}
+
 type Name struct {
 	Key   NameKey
 	Value string
@@ -142,12 +139,12 @@ type Name struct {
 type NameKey string
 
 const (
-	NameKeyDefault       = "name"
-	NameKeyInternational = "int_name"
-	NameKeyNational      = "nat_name"
-	NameKeyLocal         = "loc_name"
-	NameKeyOld           = "old_name"
-	NameKeyAlternative   = "alt_name"
-	NameKeyEnglish       = "name:en"
-	NameKeyAfrikaans     = "name:af"
+	NameKeyDefault       NameKey = "name"
+	NameKeyInternational NameKey = "int_name"
+	NameKeyNational      NameKey = "nat_name"
+	NameKeyLocal         NameKey = "loc_name"
+	NameKeyOld           NameKey = "old_name"
+	NameKeyAlternative   NameKey = "alt_name"
+	NameKeyEnglish       NameKey = "name:en"
+	NameKeyAfrikaans     NameKey = "name:af"
 )
