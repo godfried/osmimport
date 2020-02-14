@@ -102,7 +102,7 @@ func newBeaconNumber(val string) (*BeaconNumber, error) {
 }
 
 func newTrig(p Placemark) (*Trig, error) {
-	t := &Trig{}
+	t := &Trig{tags: make(map[string]string, 8)}
 	var err error
 	descs := strings.Split(strings.TrimSuffix(strings.TrimPrefix(p.Description, "<![CDATA["), "]]>"), "<br></br>")
 	for _, d := range descs {

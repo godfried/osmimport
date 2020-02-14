@@ -2,7 +2,6 @@ package poi
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"strings"
@@ -14,6 +13,7 @@ type POI interface {
 	Longitude() float64
 	Names() []Name
 	Tags() map[string]string
+	AddTag(key, value string)
 }
 
 type poiDists struct {
@@ -28,7 +28,6 @@ func normaliseName(name Name) string {
 }
 
 func SelectMatch(pois []POI, poi POI) POI {
-	log.Printf("selecting matches from %s", pois)
 	if len(pois) == 0 {
 		return nil
 	}

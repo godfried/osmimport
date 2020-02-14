@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/zip"
-	"encoding/gob"
 	"flag"
 	"fmt"
 	"log"
@@ -15,23 +14,33 @@ import (
 func main() {
 	log.SetOutput(os.Stdout)
 	trigSource := flag.String("dir", "", "path to KML directory with Trig data")
-	out := flag.String("out", "trig-poi-all.gob", "path to output file")
+	//out := flag.String("out", "trig-poi-all.gob", "path to output file")
 	flag.Parse()
 	files, err := filepath.Glob(*trigSource + "/*.kmz")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	output, err := os.Create(*out)
+	/*output, err := os.Create(*out)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	defer output.Close()
-	e := gob.NewEncoder(output)
-
+	e := gob.NewEncoder(output)*/
+	db, err := trig.Connect()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer db.Close()
+	err = db.CreateTable()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	for _, f := range files {
-		err = extractFiles(f, e)
+		err = extractFiles(f, db)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -39,14 +48,14 @@ func main() {
 	}
 }
 
-func extractFiles(in string, output *gob.Encoder) error {
+func extractFiles(in string, db *trig.DB) error {
 	zr, err := zip.OpenReader(in)
 	if err != nil {
 		return err
 	}
 	defer zr.Close()
 	for _, f := range zr.File {
-		err := extractFile(f, output)
+		err := extractFile(f, db)
 		if err != nil {
 			return err
 		}
@@ -54,7 +63,7 @@ func extractFiles(in string, output *gob.Encoder) error {
 	return nil
 }
 
-func extractFile(f *zip.File, output *gob.Encoder) error {
+func extractFile(f *zip.File, db *trig.DB) error {
 	rc, err := f.Open()
 	if err != nil {
 		return err
@@ -64,11 +73,5 @@ func extractFile(f *zip.File, output *gob.Encoder) error {
 	if err != nil {
 		return err
 	}
-	for _, t := range trigs {
-		err = output.Encode(t)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return db.Import(trigs)
 }

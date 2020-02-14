@@ -52,10 +52,6 @@ const elementXML = `
 `
 
 func (e Element) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
-	//	err := enc.EncodeToken(xml.StartElement{Name: xml.Name{Local: "modify"}})
-	//	if err != nil {
-	//		return err
-	//	}
 	attrs := []xml.Attr{
 		{Name: xml.Name{Local: "id"}, Value: strconv.FormatUint(e.ID, 10)},
 		{Name: xml.Name{Local: "version"}, Value: strconv.FormatUint(uint64(e.Version), 10)},
@@ -92,11 +88,6 @@ func (e Element) MarshalXML(enc *xml.Encoder, start xml.StartElement) error {
 		}
 	}
 	return enc.EncodeToken(xml.EndElement{Name: xml.Name{Local: e.Type}})
-	//if err != nil {
-	//	return err
-	//}
-
-	//return enc.EncodeToken(xml.EndElement{Name: xml.Name{Local: "modify"}})
 }
 
 func (e Element) String() string {
@@ -125,23 +116,31 @@ func (e *Element) Longitude() float64 {
 	return e.Lon
 }
 
+func (e *Element) AddTag(key, value string) {
+	e.TagMap[key] = value
+}
+
 func runQuery(query string) (*http.Response, error) {
 	var resp *http.Response
 	var err error
 	vals := url.Values{"data": []string{query}}
 	c := &http.Client{Timeout: 180 * time.Second}
-	for _, endpoint := range endpoints {
-		resp, err = c.PostForm(endpoint, vals)
-		if err != nil {
-			log.Printf("Could not load node: %s", err)
-			continue
+	retries := 50
+	for i := 0; i < retries; i++ {
+		for _, endpoint := range endpoints {
+			resp, err = c.PostForm(endpoint, vals)
+			if err != nil {
+				log.Printf("Could not load elements: %s", err)
+				continue
+			}
+			if resp.StatusCode != 200 {
+				resp.Body.Close()
+				err = fmt.Errorf("bad status code: %s", resp.Status)
+				continue
+			}
+			return resp, nil
 		}
-		if resp.StatusCode != 200 {
-			resp.Body.Close()
-			err = fmt.Errorf("bad status code: %s", resp.Status)
-			continue
-		}
-		return resp, nil
+		time.Sleep(10 * time.Second)
 	}
 	return nil, err
 }
@@ -171,7 +170,7 @@ type OSMPOI interface {
 	OSMFilter() []poi.Attribute
 }
 
-func LoadNearestNode(p OSMPOI, dist float64) (*Element, error) {
+func LoadNearestElement(p OSMPOI, dist float64) (*Element, error) {
 	nodes, err := loadMatches(p, dist)
 	if err != nil {
 		return nil, err
@@ -184,22 +183,21 @@ func LoadNearestNode(p OSMPOI, dist float64) (*Element, error) {
 
 }
 
-func LoadMatchingNode(p OSMPOI, dist float64) (*Element, error) {
-	nodes, err := loadMatches(p, dist)
+func LoadMatchingElement(p OSMPOI, dist float64) (*Element, error) {
+	matches, err := loadMatches(p, dist)
 	if err != nil {
 		return nil, err
 	}
-	match := poi.SelectMatch(nodes, p)
+	match := poi.SelectMatch(matches, p)
 	if match == nil {
 		log.Printf("No match found for %s", p.Names()[0].Value)
 		return nil, nil
 	}
-	log.Printf("match found %#v", match)
 	return match.(*Element), nil
 }
 
 func HasMatches(p OSMPOI, dist float64) bool {
-	m, err := LoadMatchingNode(p, dist)
+	m, err := LoadMatchingElement(p, dist)
 	if err != nil {
 		log.Printf("error loading matches: %s", err)
 		return false
@@ -237,27 +235,28 @@ type queryParam struct {
 	Longitude float64
 }
 
-func buildQuery(p OSMPOI, dist float64) (string, error) {
-	filters := p.OSMFilter()
+func buildQuery(p OSMPOI, dist float64) string {
+	return BuildQuery(p.OSMFilter(), dist, p.Latitude(), p.Longitude())
+}
+
+func BuildQuery(filters []poi.Attribute, radius, lat, lon float64) string {
 	arg := queryParam{
 		Timeout:   timeoutSeconds,
 		Filters:   filters,
-		Radius:    dist,
-		Latitude:  p.Latitude(),
-		Longitude: p.Longitude(),
+		Radius:    radius,
+		Latitude:  lat,
+		Longitude: lon,
 	}
 	var b strings.Builder
 	err := template.Must(template.New("query").Parse(query)).Execute(&b, arg)
-	return b.String(), err
+	if err != nil {
+		panic(err)
+	}
+	return b.String()
 }
 
 func loadMatches(p OSMPOI, dist float64) ([]poi.POI, error) {
-	q, err := buildQuery(p, dist)
-	if err != nil {
-		return nil, err
-	}
-	name := p.Names()[0].Value
-	log.Printf("Loading nodes for %s using query: %s", name, q)
+	q := buildQuery(p, dist)
 	es, err := loadElements(q)
 	if err != nil {
 		return nil, err

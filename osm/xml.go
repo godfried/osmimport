@@ -76,7 +76,6 @@ func NewNode(p poi.POI, id int) *Node {
 	for k, v := range poiTags {
 		tags = append(tags, Tag{Key: k, Value: v})
 	}
-	tags = append(tags, Tag{Key: "fixme", Value: "check against map data"})
 	return &Node{Lat: p.Latitude(), Lon: p.Longitude(), Tag: tags, Visible: true, ID: id}
 }
 

@@ -14,6 +14,8 @@ type Trig struct {
 	Number      *BeaconNumber
 	Description string
 	CreatedBy   string
+	OSMID       uint64
+	tags        map[string]string
 }
 
 type BeaconNumber struct {
@@ -36,12 +38,21 @@ func (t Trig) Longitude() float64 {
 func (t Trig) Names() []poi.Name {
 	return []poi.Name{{Key: poi.NameKeyDefault, Value: t.Name}}
 }
+func (t *Trig) AddTag(key, value string) {
+	if t.tags == nil {
+		t.tags = make(map[string]string, 8)
+	}
+	t.tags[key] = value
+}
 
 func (t Trig) Tags() map[string]string {
 	tags := map[string]string{
 		"man_made": "survey_point",
 		"ref":      t.Number.String(),
 		"source":   "ngi",
+	}
+	for k, v := range t.tags {
+		tags[k] = v
 	}
 	for _, n := range t.Names() {
 		tags[string(n.Key)] = n.Value
