@@ -40,6 +40,10 @@ type CircleBox struct {
 	RadiusKM float64
 }
 
+func (c CircleBox) Radius() float64 {
+	return c.RadiusKM * 1000
+}
+
 func (c CircleBox) IsZero() bool {
 	return c.Lat == 0 && c.Lon == 0 && c.RadiusKM == 0
 }

@@ -121,6 +121,7 @@ func (e *Element) AddTag(key, value string) {
 }
 
 func runQuery(query string) (*http.Response, error) {
+	log.Printf("running query %s", query)
 	var resp *http.Response
 	var err error
 	vals := url.Values{"data": []string{query}}
@@ -155,6 +156,7 @@ func loadElements(query string) ([]*Element, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("results: %s", body)
 	result := new(Result)
 	err = json.Unmarshal(body, result)
 	if err != nil {
@@ -209,7 +211,7 @@ func RunQuery(query string) ([]*Element, error) {
 	return loadElements(query)
 }
 
-const query = `
+const DefaultQuery = `
 [out:json][timeout:{{.Timeout}}];
 (
 {{- $radius := .Radius -}}
@@ -224,6 +226,20 @@ const query = `
 out meta;
 `
 
+const SAGNSQuery = `
+{{- $radius := .Radius -}}
+{{- $latitude := .Latitude -}}
+{{- $longitude := .Longitude -}}
+[out:json][timeout:{{.Timeout}}];
+(
+	node["sagns_id"](around:{{$radius}},{{$latitude}},{{$longitude}});
+	way["sagns_id"](around:{{$radius}},{{$latitude}},{{$longitude}});
+	relation["sagns_id"](around:{{$radius}},{{$latitude}},{{$longitude}});
+);
+out body;
+>;
+out skel qt;`
+
 const timeoutSeconds = 20
 
 type queryParam struct {
@@ -236,10 +252,10 @@ type queryParam struct {
 }
 
 func buildQuery(p OSMPOI, dist float64) string {
-	return BuildQuery(p.OSMFilter(), dist, p.Latitude(), p.Longitude())
+	return BuildQuery(DefaultQuery, p.OSMFilter(), dist, p.Latitude(), p.Longitude())
 }
 
-func BuildQuery(filters []poi.Attribute, radius, lat, lon float64) string {
+func BuildQuery(query string, filters []poi.Attribute, radius, lat, lon float64) string {
 	arg := queryParam{
 		Timeout:   timeoutSeconds,
 		Filters:   filters,

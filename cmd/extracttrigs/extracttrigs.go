@@ -14,20 +14,12 @@ import (
 func main() {
 	log.SetOutput(os.Stdout)
 	trigSource := flag.String("dir", "", "path to KML directory with Trig data")
-	//out := flag.String("out", "trig-poi-all.gob", "path to output file")
 	flag.Parse()
 	files, err := filepath.Glob(*trigSource + "/*.kmz")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	/*output, err := os.Create(*out)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer output.Close()
-	e := gob.NewEncoder(output)*/
 	db, err := trig.Connect()
 	if err != nil {
 		fmt.Println(err)

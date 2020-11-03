@@ -54,8 +54,17 @@ func run(bbox poi.CircleBox, limit int, out string) error {
 		if !ok {
 			continue
 		}
-		if _, ok := resultMap[ref]; ok {
-			log.Printf("ref %s already exists", ref)
+		if exists, ok := resultMap[ref]; ok {
+			var ename, rname string
+			for _, n := range exists.Names() {
+				ename = n.Value
+				break
+			}
+			for _, n := range r.Names() {
+				rname = n.Value
+				break
+			}
+			log.Printf("ref %s already exists: %s %f %f and %s %f %f", ref, rname, r.Lat, r.Lon, ename, exists.Lat, exists.Lon)
 			continue
 		}
 		resultMap[ref] = r

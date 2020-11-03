@@ -106,10 +106,18 @@ type SAGNSPOI struct {
 	districtMunicipality string     // 16
 	comments             string     // 18
 	meaning              string     // 19
+	tags                 map[string]string
 }
 
 func (s SAGNSPOI) Latitude() float64 {
 	return s.latitude
+}
+
+func (s *SAGNSPOI) AddTag(key, value string) {
+	if s.tags == nil {
+		s.tags = make(map[string]string, 8)
+	}
+	s.tags[key] = value
 }
 
 func (s SAGNSPOI) Longitude() float64 {
@@ -129,6 +137,9 @@ func (s SAGNSPOI) Tags() map[string]string {
 	tags["source"] = "sagns"
 	for _, n := range s.Names() {
 		tags[string(n.Key)] = n.Value
+	}
+	for k, v := range s.tags {
+		tags[k] = v
 	}
 	return tags
 }
