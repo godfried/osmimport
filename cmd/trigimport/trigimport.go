@@ -43,7 +43,7 @@ func run(bbox poi.CircleBox, limit int, out string) error {
 	}
 	log.Printf("loaded %d POIs", len(pois))
 	boundedPOIs := make([]poi.POI, 0, len(pois))
-	q := overpass.BuildQuery([]poi.Attribute{{Key: "man_made", Value: "survey_point"}}, bbox.RadiusKM*1000, bbox.Lat, bbox.Lon)
+	q := overpass.BuildQuery(overpass.DefaultQuery, []poi.Attribute{{Key: "man_made", Value: "survey_point"}}, bbox.RadiusKM*1000, bbox.Lat, bbox.Lon)
 	results, err := overpass.RunQuery(q)
 	if err != nil {
 		return err
