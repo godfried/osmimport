@@ -10,8 +10,6 @@ import (
 	"strings"
 
 	"log"
-
-	"github.com/godfried/za-prom/common"
 )
 
 type GeoName struct {
